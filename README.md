@@ -1,15 +1,15 @@
 # Panta API Playground
 
-Next.js demo app for screen-sharing the Panta Markets API: **quote → build → wallet sign → broadcast → register/submit**.
+Next.js demo for the Panta Markets API — no sign-in page. Paste an API key, manage keys, run create/buy flows.
 
-Quotes and raw JSON responses are shown beside each step so engineers can see exactly what the API returns.
+## Tabs
 
-## Prerequisites
-
-1. **panta-dev** running locally (or a staging host), with Redis + DB migrated  
-2. A test API key (`pk_test_…`) with `canCreateMarkets` if you demo create  
-3. A Solana wallet (Phantom / Solflare) funded on the cluster your RPC uses  
-4. For create: a public **1024×1024** `imageUrl` the API can fetch  
+| Tab | What |
+| --- | --- |
+| **API keys** | `GET/POST /account/keys/`, revoke — create new keys (secret shown once) |
+| **Create market** | Quote → build → sign → register |
+| **Primary buy** | Quote → build → sign → submit/verify |
+| **Admin** | List users / grant create (needs admin key + backend PATCH) |
 
 ## Setup
 
@@ -22,31 +22,15 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
-### Env
-
 | Variable | Meaning |
 | --- | --- |
-| `PANTA_API_BASE_URL` | Upstream API root, default `http://localhost:8000/api/v1` |
-| `NEXT_PUBLIC_DEFAULT_RPC` | Default Solana RPC shown in the UI |
+| `PANTA_API_BASE_URL` | Upstream API, default `http://localhost:8000/api/v1` |
+| `NEXT_PUBLIC_DEFAULT_RPC` | Default Solana RPC |
 
-The browser talks to **this app’s** `/api/panta/*` proxy (no CORS setup on Django required for local demos). The proxy forwards `X-Api-Key` to `PANTA_API_BASE_URL`.
+Requests go through `/api/panta/*` (Next proxy).
 
-If you call the API from another origin without the proxy, add that origin to panta-dev `CORS_ALLOWED_ORIGINS`.
+## First key
 
-## Demo flow (create market)
+Creating keys via the API still requires an existing key (`X-Api-Key`). Issue the first one from `panta-dev` (Django admin / shell), paste it in the top bar, then use the **API keys** tab to mint more.
 
-1. Paste API key → **Test key**  
-2. **Connect wallet**  
-3. Fill market fields + `imageUrl`  
-4. **Quote** — fee + `createId` appear in the callout and JSON panel  
-5. **Build** — unsigned versioned tx  
-6. **Sign & broadcast** — wallet popup, then signature  
-7. **Register** — `marketId` + `registered`  
-
-Then switch to **Primary buy**, paste `marketId`, quote a YES/NO size, build, sign, submit/verify.
-
-## Notes
-
-- Create build returns a full base64 `VersionedTransaction`.  
-- Primary buy build returns **instructions**; the playground compiles them client-side.  
-- Do not commit real API keys. Keys are stored in `localStorage` only.
+Do not commit real secrets. The key is stored in `localStorage`.

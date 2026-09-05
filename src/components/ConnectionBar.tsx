@@ -3,14 +3,13 @@
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { useSettings } from "@/components/SettingsContext";
-import { pantaFetch, ApiError } from "@/lib/api";
+import { fetchAccount, probeIsAdmin } from "@/lib/accountApi";
+import { ApiError } from "@/lib/api";
 import { useState } from "react";
-import type { Json } from "@/lib/types";
 
 export function ConnectionBar() {
   const { settings, setSettings } = useSettings();
   const { publicKey } = useWallet();
-  const [whoami, setWhoami] = useState<Json | undefined>();
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
@@ -18,12 +17,11 @@ export function ConnectionBar() {
     setBusy(true);
     setErr(null);
     try {
-      const { raw } = await pantaFetch<Json>("/account/", {
-        apiKey: settings.apiKey,
-      });
-      setWhoami(raw);
+      const account = await fetchAccount(settings.apiKey);
+      const isAdmin = await probeIsAdmin(settings.apiKey);
+      setSettings({ ...settings, account, isAdmin });
     } catch (e) {
-      setWhoami(undefined);
+      setSettings({ ...settings, account: null, isAdmin: false });
       if (e instanceof ApiError) {
         setErr(`${e.message} (${e.status})`);
       } else {
@@ -41,7 +39,7 @@ export function ConnectionBar() {
         <div>
           <div className="conn-bar__title">Panta API Playground</div>
           <div className="conn-bar__sub">
-            Demo quote → build → sign → broadcast → confirm
+            Paste a key · manage keys · quote → build → sign
           </div>
         </div>
       </div>
@@ -55,7 +53,12 @@ export function ConnectionBar() {
             placeholder="pk_test_…"
             value={settings.apiKey}
             onChange={(e) =>
-              setSettings({ ...settings, apiKey: e.target.value.trim() })
+              setSettings({
+                ...settings,
+                apiKey: e.target.value.trim(),
+                account: null,
+                isAdmin: false,
+              })
             }
           />
         </label>
@@ -72,7 +75,7 @@ export function ConnectionBar() {
           type="button"
           className="btn btn--ghost"
           disabled={!settings.apiKey || busy}
-          onClick={testKey}
+          onClick={() => void testKey()}
         >
           {busy ? "Checking…" : "Test key"}
         </button>
@@ -85,18 +88,11 @@ export function ConnectionBar() {
           <code>{publicKey ? publicKey.toBase58() : "not connected"}</code>
         </span>
         {err && <span className="err">{err}</span>}
-        {whoami && typeof whoami === "object" && !Array.isArray(whoami) && (
+        {settings.account && (
           <span className="ok">
-            Authenticated as{" "}
-            <code>
-              {String(
-                (whoami as { name?: string; userId?: string }).name ||
-                  (whoami as { userId?: string }).userId,
-              )}
-            </code>
-            {(whoami as { canCreateMarkets?: boolean }).canCreateMarkets
-              ? " · canCreateMarkets"
-              : ""}
+            Account <code>{settings.account.name}</code>
+            {settings.account.canCreateMarkets ? " · canCreateMarkets" : ""}
+            {settings.isAdmin ? " · admin" : ""}
           </span>
         )}
       </div>

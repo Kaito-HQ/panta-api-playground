@@ -1,5 +1,39 @@
 export type Json = null | boolean | number | string | Json[] | { [key: string]: Json };
 
+export type Account = {
+  userId: string;
+  name: string;
+  status: string;
+  canCreateMarkets: boolean;
+  createdAt?: string;
+  apiKeyId?: string;
+};
+
+export type ApiKeyRow = {
+  id: string;
+  name: string;
+  prefix: string;
+  env: string;
+  status: string;
+  createdAt: string;
+  revokedAt: string | null;
+  secret?: string;
+};
+
+export type AdminUser = {
+  userId: string;
+  name: string;
+  status: string;
+  canCreateMarkets: boolean;
+  isAdmin: boolean;
+  createdAt?: string | null;
+  metrics?: {
+    creates?: { total: number };
+    trades?: { total: number };
+    keys?: { active: number; total: number };
+  };
+};
+
 export type CreateQuoteResponse = {
   createId: string;
   expectedEventPda: string;
