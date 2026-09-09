@@ -6,6 +6,7 @@ import { useSettings } from "@/components/SettingsContext";
 import { fetchAccount, probeIsAdmin } from "@/lib/accountApi";
 import { ApiError } from "@/lib/api";
 import { useState } from "react";
+import Image from "next/image";
 
 export function ConnectionBar() {
   const { settings, setSettings } = useSettings();
@@ -32,14 +33,26 @@ export function ConnectionBar() {
     }
   };
 
+  const walletLabel = publicKey
+    ? `${publicKey.toBase58().slice(0, 4)}…${publicKey.toBase58().slice(-4)}`
+    : "not connected";
+
   return (
     <header className="conn-bar">
       <div className="conn-bar__brand">
-        <div className="conn-bar__mark">P</div>
+        <div className="conn-bar__mark" aria-hidden>
+          <Image
+            src="/logomark.svg"
+            alt=""
+            width={18}
+            height={18}
+            priority
+          />
+        </div>
         <div>
           <div className="conn-bar__title">Panta API Playground</div>
           <div className="conn-bar__sub">
-            Paste a key · manage keys · quote → build → sign
+            Sign in · mint a key · quote → build → sign → broadcast
           </div>
         </div>
       </div>
@@ -50,7 +63,7 @@ export function ConnectionBar() {
           <input
             type="password"
             autoComplete="off"
-            placeholder="pk_test_…"
+            placeholder="pk_test_… (for product routes)"
             value={settings.apiKey}
             onChange={(e) =>
               setSettings({
@@ -83,15 +96,19 @@ export function ConnectionBar() {
       </div>
 
       <div className="conn-bar__meta">
-        <span>
-          Wallet:{" "}
-          <code>{publicKey ? publicKey.toBase58() : "not connected"}</code>
+        <span className="conn-bar__chip" title={publicKey?.toBase58()}>
+          Wallet <code>{walletLabel}</code>
         </span>
+        {settings.accessToken && (
+          <span className="conn-bar__chip ok">
+            JWT <code>{settings.email || "signed in"}</code>
+          </span>
+        )}
         {err && <span className="err">{err}</span>}
         {settings.account && (
-          <span className="ok">
+          <span className="conn-bar__chip ok">
             Account <code>{settings.account.name}</code>
-            {settings.account.canCreateMarkets ? " · canCreateMarkets" : ""}
+            {settings.account.canCreateMarkets ? " · create" : ""}
             {settings.isAdmin ? " · admin" : ""}
           </span>
         )}

@@ -15,6 +15,7 @@ import {
   type PlaygroundSettings,
 } from "@/lib/storage";
 import { SettingsContext, useSettings } from "@/components/SettingsContext";
+import { TabNavProvider } from "@/components/TabNavContext";
 
 function SettingsProvider({ children }: { children: ReactNode }) {
   const [settings, setSettingsState] = useState<PlaygroundSettings>(() =>
@@ -26,8 +27,16 @@ function SettingsProvider({ children }: { children: ReactNode }) {
     saveSettings(next);
   };
 
+  const patchSettings = (patch: Partial<PlaygroundSettings>) => {
+    setSettingsState((prev) => {
+      const next = { ...prev, ...patch };
+      saveSettings(next);
+      return next;
+    });
+  };
+
   return (
-    <SettingsContext.Provider value={{ settings, setSettings }}>
+    <SettingsContext.Provider value={{ settings, setSettings, patchSettings }}>
       {children}
     </SettingsContext.Provider>
   );
@@ -52,7 +61,9 @@ function WalletTree({ children }: { children: ReactNode }) {
 export function Providers({ children }: { children: ReactNode }) {
   return (
     <SettingsProvider>
-      <WalletTree>{children}</WalletTree>
+      <TabNavProvider>
+        <WalletTree>{children}</WalletTree>
+      </TabNavProvider>
     </SettingsProvider>
   );
 }

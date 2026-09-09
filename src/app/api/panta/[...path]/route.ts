@@ -17,6 +17,10 @@ async function forward(req: NextRequest, ctx: Ctx) {
   const headers = new Headers();
   const apiKey = req.headers.get("x-api-key");
   if (apiKey) headers.set("X-Api-Key", apiKey);
+  const authorization = req.headers.get("authorization");
+  if (authorization) headers.set("Authorization", authorization);
+  const userId = req.headers.get("x-user-id");
+  if (userId) headers.set("X-User-Id", userId);
   const contentType = req.headers.get("content-type");
   if (contentType) headers.set("Content-Type", contentType);
   headers.set("Accept", "application/json");

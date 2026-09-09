@@ -6,6 +6,7 @@ import type { PlaygroundSettings } from "@/lib/storage";
 type Ctx = {
   settings: PlaygroundSettings;
   setSettings: (s: PlaygroundSettings) => void;
+  patchSettings: (patch: Partial<PlaygroundSettings>) => void;
 };
 
 export const SettingsContext = createContext<Ctx | null>(null);

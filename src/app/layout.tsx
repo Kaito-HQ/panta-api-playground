@@ -1,16 +1,22 @@
 import type { Metadata } from "next";
-import { DM_Sans, IBM_Plex_Mono } from "next/font/google";
+import { Figtree, Funnel_Display, Geist_Mono } from "next/font/google";
 import { Providers } from "@/components/Providers";
 import "./globals.css";
 
-const body = DM_Sans({
-  variable: "--font-body",
+const figtree = Figtree({
+  variable: "--font-figtree",
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
 });
 
-const mono = IBM_Plex_Mono({
-  variable: "--font-mono",
+const funnel = Funnel_Display({
+  variable: "--font-funnel",
+  subsets: ["latin"],
+  weight: ["500", "600", "700"],
+});
+
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
   subsets: ["latin"],
   weight: ["400", "500"],
 });
@@ -27,7 +33,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${body.variable} ${mono.variable} h-full`}>
+    <html
+      lang="en"
+      className={`dark ${figtree.variable} ${funnel.variable} ${geistMono.variable} h-full`}
+    >
       <body className="min-h-full antialiased">
         <Providers>{children}</Providers>
       </body>

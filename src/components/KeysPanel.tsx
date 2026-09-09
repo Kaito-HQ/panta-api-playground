@@ -3,11 +3,12 @@
 import { type FormEvent, useCallback, useEffect, useState } from "react";
 import { useSettings } from "@/components/SettingsContext";
 import { createKey, listKeys, revokeKey } from "@/lib/accountApi";
+import { withAccessToken } from "@/lib/authApi";
 import { ApiError } from "@/lib/api";
 import type { ApiKeyRow } from "@/lib/types";
 
 export function KeysPanel() {
-  const { settings } = useSettings();
+  const { settings, setSettings, patchSettings } = useSettings();
   const [keys, setKeys] = useState<ApiKeyRow[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -16,33 +17,53 @@ export function KeysPanel() {
   const [env, setEnv] = useState<"test" | "live">("test");
   const [revokeOthers, setRevokeOthers] = useState(false);
 
+  const persistTokens = useCallback(
+    (next: { access: string; refresh: string }) => {
+      patchSettings({
+        accessToken: next.access,
+        refreshToken: next.refresh,
+      });
+    },
+    [patchSettings],
+  );
+
   const load = useCallback(async () => {
-    if (!settings.apiKey) {
+    if (!settings.accessToken) {
       setKeys([]);
       return;
     }
     setBusy(true);
     setError(null);
     try {
-      setKeys(await listKeys(settings.apiKey));
+      const rows = await withAccessToken(
+        settings.accessToken,
+        settings.refreshToken,
+        (access) => listKeys(access),
+        persistTokens,
+      );
+      setKeys(rows);
     } catch (e) {
       setError(describeErr(e));
     } finally {
       setBusy(false);
     }
-  }, [settings.apiKey]);
+  }, [
+    persistTokens,
+    settings.accessToken,
+    settings.refreshToken,
+  ]);
 
   useEffect(() => {
     void load();
   }, [load]);
 
-  if (!settings.apiKey) {
+  if (!settings.accessToken) {
     return (
       <div className="panel">
         <h2>API keys</h2>
         <p className="muted">
-          Paste an existing <code>pk_test_…</code> in the bar above, then create
-          more keys here via <code>POST /account/keys/</code>.
+          Key create/list/revoke requires a signup JWT. Open the{" "}
+          <strong>Sign in</strong> tab first, then come back here.
         </p>
       </div>
     );
@@ -54,11 +75,17 @@ export function KeysPanel() {
     setError(null);
     setNewSecret(null);
     try {
-      const row = await createKey(settings.apiKey, {
-        env,
-        name: name.trim() || undefined,
-        revokeOthers,
-      });
+      const row = await withAccessToken(
+        settings.accessToken,
+        settings.refreshToken,
+        (access) =>
+          createKey(access, {
+            env,
+            name: name.trim() || undefined,
+            revokeOthers,
+          }),
+        persistTokens,
+      );
       if (row.secret) setNewSecret(row.secret);
       setName("");
       await load();
@@ -74,13 +101,27 @@ export function KeysPanel() {
     setBusy(true);
     setError(null);
     try {
-      await revokeKey(settings.apiKey, id);
+      await withAccessToken(
+        settings.accessToken,
+        settings.refreshToken,
+        (access) => revokeKey(access, id),
+        persistTokens,
+      );
       await load();
     } catch (err) {
       setError(describeErr(err));
     } finally {
       setBusy(false);
     }
+  };
+
+  const useSecret = (secret: string) => {
+    setSettings({
+      ...settings,
+      apiKey: secret,
+      account: null,
+      isAdmin: false,
+    });
   };
 
   return (
@@ -90,10 +131,11 @@ export function KeysPanel() {
       <section className="panel" style={{ marginBottom: "1rem" }}>
         <h2>Create API key</h2>
         <p className="muted">
-          Calls <code>POST /account/keys/</code> with your current key. The new
-          secret is shown once.
+          Calls <code>POST /account/keys/</code> with{" "}
+          <code>Authorization: Bearer</code> (not <code>X-Api-Key</code>). The
+          new secret is shown once — use it in the bar for create/buy flows.
         </p>
-        <form onSubmit={onCreate} className="stack-form">
+        <form onSubmit={(e) => void onCreate(e)} className="stack-form">
           <div className="row">
             <label className="field">
               <span>Name</span>
@@ -133,14 +175,22 @@ export function KeysPanel() {
             <code style={{ display: "block", marginTop: "0.35rem" }}>
               {newSecret}
             </code>
-            <button
-              type="button"
-              className="btn"
-              style={{ marginTop: "0.5rem" }}
-              onClick={() => void navigator.clipboard.writeText(newSecret)}
-            >
-              Copy
-            </button>
+            <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.5rem" }}>
+              <button
+                type="button"
+                className="btn"
+                onClick={() => void navigator.clipboard.writeText(newSecret)}
+              >
+                Copy
+              </button>
+              <button
+                type="button"
+                className="btn btn--accent"
+                onClick={() => useSecret(newSecret)}
+              >
+                Use in connection bar
+              </button>
+            </div>
           </div>
         )}
       </section>

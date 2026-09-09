@@ -22,10 +22,13 @@ export async function pantaFetch<T>(
   path: string,
   options: {
     method?: string;
-    apiKey: string;
+    apiKey?: string;
+    accessToken?: string;
+    /** Sent as X-User-Id for attribution-aware product routes. */
+    userId?: string;
     body?: unknown;
     query?: Record<string, string>;
-  },
+  } = {},
 ): Promise<{ data: T; raw: Json }> {
   const method = options.method || "GET";
   const qs = options.query
@@ -35,8 +38,17 @@ export async function pantaFetch<T>(
 
   const headers: Record<string, string> = {
     Accept: "application/json",
-    "X-Api-Key": options.apiKey,
   };
+  if (options.apiKey) {
+    headers["X-Api-Key"] = options.apiKey;
+  }
+  if (options.accessToken) {
+    headers.Authorization = `Bearer ${options.accessToken}`;
+  }
+  if (options.userId?.trim()) {
+    headers["X-User-Id"] = options.userId.trim();
+  }
+
   let body: string | undefined;
   if (options.body !== undefined) {
     headers["Content-Type"] = "application/json";

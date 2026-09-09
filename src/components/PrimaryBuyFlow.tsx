@@ -1,9 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { useSettings } from "@/components/SettingsContext";
-import { ApiError, pantaFetch } from "@/lib/api";
+import { useTabNav } from "@/components/TabNavContext";
+import { pantaFetch } from "@/lib/api";
+import { describeErr } from "@/lib/errors";
 import { instructionsToVersionedTx } from "@/lib/solana";
 import type {
   Json,
@@ -17,11 +19,13 @@ export function PrimaryBuyFlow() {
   const { settings } = useSettings();
   const { publicKey, signTransaction } = useWallet();
   const { connection } = useConnection();
+  const { openTrades, buyPreset, clearBuyPreset } = useTabNav();
 
   const [marketId, setMarketId] = useState("");
   const [side, setSide] = useState<"yes" | "no">("yes");
   const [amountUsdc, setAmountUsdc] = useState("20.00");
   const [maxSlippageBps, setMaxSlippageBps] = useState(100);
+  const [userId, setUserId] = useState(settings.userId || "");
 
   const [step, setStep] = useState(0);
   const [busy, setBusy] = useState(false);
@@ -35,11 +39,20 @@ export function PrimaryBuyFlow() {
   const [submitRaw, setSubmitRaw] = useState<Json>();
   const [verifyRaw, setVerifyRaw] = useState<Json>();
 
+  useEffect(() => {
+    if (buyPreset?.marketId) {
+      setMarketId(buyPreset.marketId);
+      clearBuyPreset();
+    }
+  }, [buyPreset, clearBuyPreset]);
+
   const requireReady = () => {
     if (!settings.apiKey) throw new Error("Set an API key in the bar above");
     if (!publicKey) throw new Error("Connect a wallet");
     if (!signTransaction) throw new Error("Wallet cannot sign transactions");
   };
+
+  const attributionUserId = userId.trim() || settings.userId || undefined;
 
   const runQuote = async () => {
     setBusy(true);
@@ -47,17 +60,20 @@ export function PrimaryBuyFlow() {
     try {
       requireReady();
       if (!marketId.trim()) throw new Error("marketId required");
+      const body: Record<string, string> = {
+        wallet: publicKey!.toBase58(),
+        marketId: marketId.trim(),
+        side,
+        amountUsdc,
+      };
+      if (attributionUserId) body.userId = attributionUserId;
       const { data, raw } = await pantaFetch<PrimaryQuoteResponse>(
         "/primaryorderquote/",
         {
           method: "POST",
           apiKey: settings.apiKey,
-          body: {
-            wallet: publicKey!.toBase58(),
-            marketId: marketId.trim(),
-            side,
-            amountUsdc,
-          },
+          userId: attributionUserId,
+          body,
         },
       );
       setQuote(data);
@@ -81,16 +97,19 @@ export function PrimaryBuyFlow() {
     try {
       requireReady();
       if (!quote?.quoteId) throw new Error("Quote first");
+      const body: Record<string, string | number> = {
+        quoteId: quote.quoteId,
+        wallet: publicKey!.toBase58(),
+        maxSlippageBps: Number(maxSlippageBps),
+      };
+      if (attributionUserId) body.userId = attributionUserId;
       const { data, raw } = await pantaFetch<PrimaryBuildResponse>(
         "/primaryorderbuild/",
         {
           method: "POST",
           apiKey: settings.apiKey,
-          body: {
-            quoteId: quote.quoteId,
-            wallet: publicKey!.toBase58(),
-            maxSlippageBps: Number(maxSlippageBps),
-          },
+          userId: attributionUserId,
+          body,
         },
       );
       setBuild(data);
@@ -235,6 +254,14 @@ export function PrimaryBuyFlow() {
               />
             </label>
           </div>
+          <label className="field">
+            <span>userId / X-User-Id (optional attribution)</span>
+            <input
+              value={userId}
+              onChange={(e) => setUserId(e.target.value)}
+              placeholder={settings.userId || "usr_…"}
+            />
+          </label>
 
           <div className="actions">
             <button type="button" className="btn" disabled={busy} onClick={runQuote}>
@@ -271,6 +298,22 @@ export function PrimaryBuyFlow() {
               onClick={runVerify}
             >
               4b · Verify
+            </button>
+            <button
+              type="button"
+              className="btn btn--ghost"
+              disabled={!signature || !build}
+              onClick={() =>
+                openTrades({
+                  signature,
+                  wallet: publicKey?.toBase58(),
+                  marketId: build?.marketId || marketId.trim(),
+                  quoteId: quote?.quoteId,
+                  clientOrderId: build?.orderId,
+                })
+              }
+            >
+              Report trade
             </button>
           </div>
 
@@ -313,12 +356,4 @@ export function PrimaryBuyFlow() {
       </div>
     </div>
   );
-}
-
-function describeErr(e: unknown): string {
-  if (e instanceof ApiError) {
-    return `${e.message} · HTTP ${e.status}\n${JSON.stringify(e.body, null, 2)}`;
-  }
-  if (e instanceof Error) return e.message;
-  return String(e);
 }
