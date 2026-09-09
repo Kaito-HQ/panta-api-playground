@@ -77,3 +77,32 @@ export function formatUsdcBase(base: string | number | undefined): string {
   if (!Number.isFinite(n)) return String(base);
   return `${(n / 1_000_000).toFixed(2)} USDC`;
 }
+
+/** Catalog share / fee amounts stored as 1e6 base units. */
+export function formatShareBase(base: string | number | undefined | null): string {
+  if (base === undefined || base === null || base === "") return "—";
+  const n = typeof base === "string" ? Number(base) : base;
+  if (!Number.isFinite(n)) return String(base);
+  if (n === 0) return "0";
+  const human = n / 1_000_000;
+  return human.toLocaleString(undefined, {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 4,
+  });
+}
+
+/** Price strings like "0.485866425" → readable. */
+export function formatPrice(price: string | number | null | undefined): string {
+  if (price === undefined || price === null || price === "") return "—";
+  const n = typeof price === "string" ? Number(price) : price;
+  if (!Number.isFinite(n)) return String(price);
+  return n.toFixed(4);
+}
+
+/** Human volume field already decimal (`"8.60"`). */
+export function formatVolumeUsdc(v: string | number | null | undefined): string {
+  if (v === undefined || v === null || v === "") return "—";
+  const n = typeof v === "string" ? Number(v) : v;
+  if (!Number.isFinite(n)) return `${v} USDC`;
+  return `${n.toFixed(2)} USDC`;
+}

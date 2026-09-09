@@ -10,6 +10,10 @@ import {
 } from "@/lib/accountApi";
 import { formatUsdcBase } from "@/lib/api";
 import { describeErr } from "@/lib/errors";
+import {
+  formatUsdcHuman,
+  tradeUsdcNumber,
+} from "@/lib/partnerAnalytics";
 import type {
   Account,
   AccountDashboard,
@@ -239,7 +243,14 @@ export function AccountPanel() {
                         <td>
                           <code>{row.eventPda.slice(0, 8)}…</code>
                         </td>
-                        <td>{formatUsdcBase(row.paymentUsdc)}</td>
+                        <td>
+                          {formatUsdcHuman(
+                            tradeUsdcNumber({
+                              amountUsdc: row.paymentUsdc,
+                              amountUsdcBase: row.paymentUsdcBase,
+                            }),
+                          )}
+                        </td>
                       </tr>
                     ))}
                     {metrics.creates.length === 0 && (
@@ -271,7 +282,7 @@ export function AccountPanel() {
                         </td>
                         <td>{row.kind}</td>
                         <td>{row.side || "—"}</td>
-                        <td>{formatUsdcBase(row.amountUsdc)}</td>
+                        <td>{formatUsdcHuman(tradeUsdcNumber(row))}</td>
                         <td>
                           <code>{row.marketId.slice(0, 8)}…</code>
                         </td>

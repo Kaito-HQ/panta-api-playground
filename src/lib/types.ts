@@ -51,6 +51,7 @@ export type CreateMetricRow = {
   signature?: string | null;
   status: string;
   paymentUsdc: string;
+  paymentUsdcBase?: string | number;
   createdAt?: string | null;
   updatedAt?: string | null;
 };
@@ -64,6 +65,7 @@ export type TradeMetricRow = {
   side: string;
   kind: string;
   amountUsdc: string;
+  amountUsdcBase?: string | number;
   status: string;
   createdAt?: string | null;
 };
@@ -277,6 +279,9 @@ export type MarketCatalogItem = {
   resolved?: boolean;
   status?: string;
   volumeUsdc?: string;
+  volumeUsdcBase?: string | number;
+  totalVolumeUsdc?: string;
+  totalVolumeUsdcBase?: string | number;
   campaignId?: string | null;
   createdByPartner?: boolean;
   yesPrice?: string | null;
@@ -285,6 +290,9 @@ export type MarketCatalogItem = {
   primaryNoPrice?: string | null;
   secondaryYesPrice?: string | null;
   secondaryNoPrice?: string | null;
+  creationFee?: number | string | null;
+  creatorAddress?: string | null;
+  oracle?: string | null;
 };
 
 export type MarketsListResponse = {
@@ -303,6 +311,10 @@ export type CatalogTradeRow = {
   blockTime?: number | null;
   signature?: string;
   quoteAsset?: string;
+  kind?: string;
+  side?: string;
+  amountUsdc?: string;
+  amountUsdcBase?: string | number;
 };
 
 export type MarketTradesResponse = {

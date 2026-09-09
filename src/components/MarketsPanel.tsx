@@ -4,7 +4,12 @@ import { useCallback, useEffect, useState } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { useSettings } from "@/components/SettingsContext";
 import { useTabNav } from "@/components/TabNavContext";
-import { pantaFetch } from "@/lib/api";
+import {
+  formatPrice,
+  formatShareBase,
+  formatVolumeUsdc,
+  pantaFetch,
+} from "@/lib/api";
 import { describeErr } from "@/lib/errors";
 import type {
   CatalogTradeRow,
@@ -18,6 +23,69 @@ import type {
 import { JsonPanel } from "@/components/JsonPanel";
 
 const PHASES = ["", "primary", "secondary", "resolved", "cancelled"] as const;
+
+function shortId(id: string | undefined, n = 10): string {
+  if (!id) return "—";
+  return id.length <= n + 1 ? id : `${id.slice(0, n)}…`;
+}
+
+function tradeSideLabel(t: CatalogTradeRow): string {
+  if (t.side) return t.side.toUpperCase();
+  const yes = Number(t.yesAmount || 0);
+  const no = Number(t.noAmount || 0);
+  if (yes > 0 && no <= 0) return "YES";
+  if (no > 0 && yes <= 0) return "NO";
+  return "—";
+}
+
+function TradeRows({
+  rows,
+  mode,
+}: {
+  rows: CatalogTradeRow[];
+  mode: "market" | "wallet";
+}) {
+  return (
+    <div className="table-wrap">
+      <table className="data-table">
+        <thead>
+          <tr>
+            {mode === "wallet" && <th>Market</th>}
+            <th>Signature</th>
+            <th>Wallet</th>
+            <th>Side</th>
+            <th>Primary</th>
+            <th>YES shares</th>
+            <th>NO shares</th>
+            <th>Fee</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((t, i) => (
+            <tr key={`${t.signature || i}-${mode}`}>
+              {mode === "wallet" && (
+                <td>
+                  <code title={t.marketId}>{shortId(t.marketId, 8)}</code>
+                </td>
+              )}
+              <td>
+                <code title={t.signature}>{shortId(t.signature, 10)}</code>
+              </td>
+              <td>
+                <code title={t.wallet}>{shortId(t.wallet, 8)}</code>
+              </td>
+              <td>{tradeSideLabel(t)}</td>
+              <td>{t.isPrimary ? "yes" : "no"}</td>
+              <td>{formatShareBase(t.yesAmount)}</td>
+              <td>{formatShareBase(t.noAmount)}</td>
+              <td>{formatShareBase(t.feePaid)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
 
 export function MarketsPanel() {
   const { settings } = useSettings();
@@ -159,6 +227,9 @@ export function MarketsPanel() {
     );
   }
 
+  const yesPx = detail?.yesPrice ?? detail?.primaryYesPrice;
+  const noPx = detail?.noPrice ?? detail?.primaryNoPrice;
+
   return (
     <div className="flow">
       {error && <div className="banner banner--err">{error}</div>}
@@ -248,7 +319,8 @@ export function MarketsPanel() {
                   <th>Title</th>
                   <th>Phase</th>
                   <th>Category</th>
-                  <th>Volume</th>
+                  <th>Active volume</th>
+                  <th>Total volume</th>
                   <th>Partner</th>
                   <th />
                 </tr>
@@ -263,11 +335,12 @@ export function MarketsPanel() {
                   >
                     <td>
                       <div>{m.title || "—"}</div>
-                      <code title={m.marketId}>{m.marketId.slice(0, 10)}…</code>
+                      <code title={m.marketId}>{shortId(m.marketId, 10)}</code>
                     </td>
                     <td>{m.phase}</td>
                     <td>{m.category}</td>
-                    <td>{m.volumeUsdc ?? "—"}</td>
+                    <td>{formatVolumeUsdc(m.volumeUsdc)}</td>
+                    <td>{formatVolumeUsdc(m.totalVolumeUsdc)}</td>
                     <td>{m.createdByPartner ? "yes" : "no"}</td>
                     <td>
                       <div className="actions" style={{ margin: 0 }}>
@@ -294,7 +367,7 @@ export function MarketsPanel() {
                 ))}
                 {items.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="muted">
+                    <td colSpan={7} className="muted">
                       {busy ? "Loading…" : "No markets loaded — click Load list"}
                     </td>
                   </tr>
@@ -323,14 +396,34 @@ export function MarketsPanel() {
                 marketId <code>{detail.marketId}</code>
               </div>
               <div>
-                phase {detail.phase} · type {detail.marketType} · region{" "}
-                {detail.region} · status {detail.status}
+                phase {detail.phase} · type {detail.marketType || "—"} · region{" "}
+                {detail.region || "—"} · status {detail.status || "—"}
               </div>
-              {(detail.yesPrice != null || detail.primaryYesPrice != null) && (
+              <div>
+                active volume {formatVolumeUsdc(detail.volumeUsdc)}
+                {detail.totalVolumeUsdc != null && (
+                  <>
+                    {" "}
+                    · total {formatVolumeUsdc(detail.totalVolumeUsdc)}
+                  </>
+                )}
+                {detail.creationFee != null && detail.creationFee !== "" && (
+                  <>
+                    {" "}
+                    · create fee {String(detail.creationFee)} USDC
+                  </>
+                )}
+              </div>
+              <div>
+                prices yes {formatPrice(yesPx)} / no {formatPrice(noPx)}
+              </div>
+              {detail.creatorAddress && (
                 <div>
-                  prices yes {detail.yesPrice ?? detail.primaryYesPrice ?? "—"} / no{" "}
-                  {detail.noPrice ?? detail.primaryNoPrice ?? "—"}
+                  creator <code>{shortId(detail.creatorAddress, 12)}</code>
                 </div>
+              )}
+              {detail.oracle && (
+                <div className="muted">oracle {detail.oracle}</div>
               )}
               {detail.description && (
                 <div className="muted">{detail.description}</div>
@@ -361,40 +454,11 @@ export function MarketsPanel() {
           {marketTrades.length > 0 && (
             <>
               <h3>Market trades</h3>
-              <div className="table-wrap">
-                <table className="data-table">
-                  <thead>
-                    <tr>
-                      <th>Signature</th>
-                      <th>Wallet</th>
-                      <th>Primary</th>
-                      <th>YES / NO</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {marketTrades.map((t, i) => (
-                      <tr key={`${t.signature || i}`}>
-                        <td>
-                          <code>
-                            {(t.signature || "—").slice(0, 10)}
-                            {t.signature ? "…" : ""}
-                          </code>
-                        </td>
-                        <td>
-                          <code>
-                            {(t.wallet || "—").slice(0, 8)}
-                            {t.wallet ? "…" : ""}
-                          </code>
-                        </td>
-                        <td>{t.isPrimary ? "yes" : "no"}</td>
-                        <td>
-                          {String(t.yesAmount ?? "—")} / {String(t.noAmount ?? "—")}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              <p className="muted">
+                Share amounts are catalog base units ÷ 1e6 (same scale as USDC
+                micro-units).
+              </p>
+              <TradeRows rows={marketTrades} mode="market" />
             </>
           )}
 
@@ -421,36 +485,7 @@ export function MarketsPanel() {
             </button>
           </div>
           {walletTrades.length > 0 && (
-            <div className="table-wrap">
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th>Market</th>
-                    <th>Signature</th>
-                    <th>Primary</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {walletTrades.map((t, i) => (
-                    <tr key={`${t.signature || i}-w`}>
-                      <td>
-                        <code>
-                          {(t.marketId || "—").slice(0, 8)}
-                          {t.marketId ? "…" : ""}
-                        </code>
-                      </td>
-                      <td>
-                        <code>
-                          {(t.signature || "—").slice(0, 10)}
-                          {t.signature ? "…" : ""}
-                        </code>
-                      </td>
-                      <td>{t.isPrimary ? "yes" : "no"}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <TradeRows rows={walletTrades} mode="wallet" />
           )}
         </section>
 
