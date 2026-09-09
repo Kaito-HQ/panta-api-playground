@@ -2,6 +2,8 @@
 
 Next.js demo for the Panta Markets API — sign up / log in, mint an API key, run create / buy / claim / trades flows.
 
+Community contributions are welcome — see [CONTRIBUTING.md](./CONTRIBUTING.md) (fork, PR, and required **Powered by Panta** attribution).
+
 ## Tabs
 
 | Tab | What |
@@ -44,3 +46,7 @@ Requests go through `/api/panta/*` (Next proxy). The proxy forwards `Authorizati
 3. Click **Use in connection bar** (or paste the secret), then run product tabs.
 
 Do not commit real secrets. JWT + API key are stored in `localStorage`.
+
+## Attribution
+
+Products and forks that use the Panta API must display **Powered by Panta** where Panta-powered functionality appears. Details: [CONTRIBUTING.md](./CONTRIBUTING.md#attribution--licensing) and the [Terms of Use](https://docs.panta.market/guides/terms-of-use).
