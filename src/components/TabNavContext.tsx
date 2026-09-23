@@ -13,6 +13,7 @@ export type PlaygroundTab =
   | "auth"
   | "keys"
   | "account"
+  | "scout"
   | "markets"
   | "create"
   | "buy"

@@ -6,6 +6,7 @@ import { KeysPanel } from "@/components/KeysPanel";
 import { AccountPanel } from "@/components/AccountPanel";
 import { CreateMarketFlow } from "@/components/CreateMarketFlow";
 import { MarketsPanel } from "@/components/MarketsPanel";
+import { MarketScoutPanel } from "@/components/MarketScoutPanel";
 import { PrimaryBuyFlow } from "@/components/PrimaryBuyFlow";
 import { PositionsPanel } from "@/components/PositionsPanel";
 import { ClaimFlow } from "@/components/ClaimFlow";
@@ -20,6 +21,7 @@ const TABS: { id: PlaygroundTab; label: string }[] = [
   { id: "auth", label: "Sign in" },
   { id: "keys", label: "API keys" },
   { id: "account", label: "Account" },
+  { id: "scout", label: "Market Scout" },
   { id: "markets", label: "Markets" },
   { id: "create", label: "Create market" },
   { id: "buy", label: "Primary buy" },
@@ -61,6 +63,9 @@ export default function HomePage() {
         </div>
         <div hidden={tab !== "account"} className="tab-pane">
           <AccountPanel />
+        </div>
+        <div hidden={tab !== "scout"} className="tab-pane">
+          <MarketScoutPanel />
         </div>
         <div hidden={tab !== "markets"} className="tab-pane">
           <MarketsPanel />

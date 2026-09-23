@@ -529,6 +529,108 @@ a:hover {
   margin: 0 0 1rem;
 }
 
+.eyebrow {
+  margin: 0 0 0.45rem;
+  color: var(--accent);
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+}
+
+.scout-hero {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.scout-hero h2,
+.scout-method h2 {
+  margin-bottom: 0.45rem;
+  font-size: 1.5rem;
+}
+
+.scout-hero__action {
+  display: flex;
+  flex-direction: column;
+  align-items: end;
+  gap: 0.5rem;
+  flex: 0 0 auto;
+}
+
+.scout-controls {
+  align-items: end;
+  justify-content: end;
+}
+
+.scout-controls .field {
+  flex: 0 1 8rem;
+}
+
+.scout-table strong {
+  display: inline-block;
+  max-width: 21rem;
+  line-height: 1.35;
+}
+
+.signal,
+.phase-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.25rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 999px;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.signal--hot { color: #041108; background: var(--ok); }
+.signal--warm { color: #271a00; background: var(--warn); }
+.signal--cool { color: #bde4ff; background: rgba(96, 165, 250, 0.18); }
+.phase-pill { color: var(--muted-strong); background: var(--bg-soft); border: 1px solid var(--line-strong); }
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  align-items: center;
+  justify-content: center;
+  min-height: 12rem;
+  border: 1px dashed var(--line-strong);
+  border-radius: 0.85rem;
+  color: var(--muted-strong);
+  text-align: center;
+}
+
+.empty-state span { color: var(--muted); font-size: 0.85rem; }
+
+.scout-method {
+  display: grid;
+  grid-template-columns: minmax(10rem, 0.7fr) minmax(0, 1.3fr);
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.raw-details {
+  margin-top: 1rem;
+  border: 1px solid var(--line);
+  border-radius: 0.85rem;
+  background: var(--bg-inset);
+  overflow: hidden;
+}
+
+.raw-details summary { padding: 0.75rem 0.9rem; cursor: pointer; color: var(--muted-strong); }
+
+@media (max-width: 720px) {
+  .scout-hero,
+  .scout-method { grid-template-columns: 1fr; display: grid; align-items: start; }
+  .scout-hero__action { align-items: start; }
+}
+
 .row {
   display: flex;
   flex-wrap: wrap;
