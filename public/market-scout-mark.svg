@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Market Scout mark</title>
+  <desc id="desc">A dark violet square with a rising teal and gold market signal.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#17113d"/>
+      <stop offset="1" stop-color="#37217c"/>
+    </linearGradient>
+    <linearGradient id="signal" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0" stop-color="#42e8d1"/>
+      <stop offset="1" stop-color="#ffd166"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="116" fill="url(#bg)"/>
+  <path d="M104 365h304M104 365V133" fill="none" stroke="#b9b2dd" stroke-opacity=".38" stroke-width="10" stroke-linecap="round"/>
+  <path d="m128 326 72-67 58 31 96-119 40 38" fill="none" stroke="url(#signal)" stroke-width="24" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="128" cy="326" r="13" fill="#42e8d1"/>
+  <circle cx="200" cy="259" r="13" fill="#61dfcf"/>
+  <circle cx="258" cy="290" r="13" fill="#9de29b"/>
+  <circle cx="354" cy="171" r="13" fill="#ffd166"/>
+  <circle cx="394" cy="209" r="13" fill="#ffd166"/>
+</svg>

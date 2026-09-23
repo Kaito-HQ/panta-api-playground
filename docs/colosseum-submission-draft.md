@@ -4,6 +4,8 @@
 
 **Market Scout** is a read-only market intelligence surface for Panta prediction markets. It helps builders inspect the live catalog, compare YES/NO prices, identify observable activity, and choose where deeper research is worthwhile before any wallet action.
 
+Product mark: `public/market-scout-mark.svg`.
+
 ## What was built during the hackathon
 
 - A new Market Scout tab in the Panta API Playground.
