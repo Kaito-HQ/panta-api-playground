@@ -1,6 +1,12 @@
 # Panta API Playground
 
-Next.js demo for the Panta Markets API — sign up / log in, mint an API key, run create / buy / claim / trades flows.
+Next.js demo for the Panta Markets API — sign up / log in, mint an API key, scan the catalog, and run create / buy / claim / trades flows.
+
+## Market Scout
+
+The **Market Scout** tab turns the read-only `/markets/` catalog into a compact research board. It ranks markets with a transparent signal based on live phase, YES/NO price separation, and observed volume, then lets the user filter by phase or category. It never signs, broadcasts, or submits a transaction.
+
+This product surface is designed for safe API exploration: the browser calls the existing proxy, Panta returns market data, and wallet custody remains outside the app. The panel includes the required **Powered by Panta** attribution.
 
 Community contributions are welcome — see [CONTRIBUTING.md](./CONTRIBUTING.md) (fork, PR, and required **Powered by Panta** attribution).
 
