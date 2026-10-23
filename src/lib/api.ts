@@ -1,5 +1,6 @@
 "use client";
 
+import { getApiTarget, PANTA_TARGET_HEADER, PANTA_TARGETS } from "./target";
 import type { Json } from "./types";
 
 export class ApiError extends Error {
@@ -34,10 +35,16 @@ export async function pantaFetch<T>(
   const qs = options.query
     ? "?" + new URLSearchParams(options.query).toString()
     : "";
-  const url = `/api/panta${path.startsWith("/") ? path : `/${path}`}${qs}`;
+  const apiPath = path.startsWith("/") ? path : `/${path}`;
+  const upstreamPath = apiPath.endsWith("/") ? apiPath : `${apiPath}/`;
+  const url = `/api/panta${apiPath}${qs}`;
+  console.log(
+    `[panta] ${method} ${PANTA_TARGETS[getApiTarget()]}${upstreamPath}${qs}`,
+  );
 
   const headers: Record<string, string> = {
     Accept: "application/json",
+    [PANTA_TARGET_HEADER]: getApiTarget(),
   };
   if (options.apiKey) {
     headers["X-Api-Key"] = options.apiKey;

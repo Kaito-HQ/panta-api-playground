@@ -7,8 +7,10 @@ import { AccountPanel } from "@/components/AccountPanel";
 import { CreateMarketFlow } from "@/components/CreateMarketFlow";
 import { MarketsPanel } from "@/components/MarketsPanel";
 import { PrimaryBuyFlow } from "@/components/PrimaryBuyFlow";
+import { SecondaryMarketFlow } from "@/components/SecondaryMarketFlow";
 import { PositionsPanel } from "@/components/PositionsPanel";
 import { ClaimFlow } from "@/components/ClaimFlow";
+import { DisputeFlow } from "@/components/DisputeFlow";
 import { TradesPanel } from "@/components/TradesPanel";
 import { AdminPanel } from "@/components/AdminPanel";
 import {
@@ -23,8 +25,10 @@ const TABS: { id: PlaygroundTab; label: string }[] = [
   { id: "markets", label: "Markets" },
   { id: "create", label: "Create market" },
   { id: "buy", label: "Primary buy" },
+  { id: "secondary", label: "Secondary" },
   { id: "positions", label: "Positions" },
   { id: "claim", label: "Claim" },
+  { id: "dispute", label: "Dispute" },
   { id: "trades", label: "Trades" },
   { id: "admin", label: "Admin" },
 ];
@@ -33,7 +37,7 @@ export default function HomePage() {
   const { tab, setTab } = useTabNav();
 
   return (
-    <main className="shell">
+    <main className={`shell${tab === "admin" ? " shell--admin" : ""}`}>
       <ConnectionBar />
 
       <div className="tabs" role="tablist" aria-label="Playground sections">
@@ -71,11 +75,17 @@ export default function HomePage() {
         <div hidden={tab !== "buy"} className="tab-pane">
           <PrimaryBuyFlow />
         </div>
+        <div hidden={tab !== "secondary"} className="tab-pane">
+          <SecondaryMarketFlow />
+        </div>
         <div hidden={tab !== "positions"} className="tab-pane">
           <PositionsPanel />
         </div>
         <div hidden={tab !== "claim"} className="tab-pane">
           <ClaimFlow />
+        </div>
+        <div hidden={tab !== "dispute"} className="tab-pane">
+          <DisputeFlow />
         </div>
         <div hidden={tab !== "trades"} className="tab-pane">
           <TradesPanel />

@@ -14,15 +14,19 @@ import {
   saveSettings,
   type PlaygroundSettings,
 } from "@/lib/storage";
+import { setApiTarget } from "@/lib/target";
 import { SettingsContext, useSettings } from "@/components/SettingsContext";
 import { TabNavProvider } from "@/components/TabNavContext";
 
 function SettingsProvider({ children }: { children: ReactNode }) {
-  const [settings, setSettingsState] = useState<PlaygroundSettings>(() =>
-    loadSettings(),
-  );
+  const [settings, setSettingsState] = useState<PlaygroundSettings>(() => {
+    const loaded = loadSettings();
+    setApiTarget(loaded.useStaging ? "staging" : "live");
+    return loaded;
+  });
 
   const setSettings = (next: PlaygroundSettings) => {
+    setApiTarget(next.useStaging ? "staging" : "live");
     setSettingsState(next);
     saveSettings(next);
   };
@@ -30,6 +34,7 @@ function SettingsProvider({ children }: { children: ReactNode }) {
   const patchSettings = (patch: Partial<PlaygroundSettings>) => {
     setSettingsState((prev) => {
       const next = { ...prev, ...patch };
+      setApiTarget(next.useStaging ? "staging" : "live");
       saveSettings(next);
       return next;
     });

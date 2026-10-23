@@ -7,6 +7,8 @@ const KEY = "panta-playground";
 export type PlaygroundSettings = {
   apiKey: string;
   rpcUrl: string;
+  /** When true, every proxied call goes to staging-api.panta.market. */
+  useStaging: boolean;
   account: Account | null;
   isAdmin: boolean;
   /** JWT access from /auth/register or /auth/token */
@@ -17,13 +19,16 @@ export type PlaygroundSettings = {
   userId: string;
 };
 
-const defaultRpc =
+export const defaultRpcUrl =
   process.env.NEXT_PUBLIC_DEFAULT_RPC || "https://api.devnet.solana.com";
+
+const defaultRpc = defaultRpcUrl;
 
 function empty(): PlaygroundSettings {
   return {
     apiKey: "",
     rpcUrl: defaultRpc,
+    useStaging: false,
     account: null,
     isAdmin: false,
     accessToken: "",
@@ -45,6 +50,7 @@ export function loadSettings(): PlaygroundSettings {
       return {
         apiKey: parsed.apiKey || "",
         rpcUrl: parsed.rpcUrl || defaultRpc,
+        useStaging: Boolean(parsed.useStaging),
         account: parsed.account ?? null,
         isAdmin: Boolean(parsed.isAdmin),
         accessToken: parsed.accessToken || "",

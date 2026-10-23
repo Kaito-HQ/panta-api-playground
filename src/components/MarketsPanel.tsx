@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { useSettings } from "@/components/SettingsContext";
 import { useTabNav } from "@/components/TabNavContext";
@@ -18,15 +18,101 @@ import type {
   MarketCatalogItem,
   MarketsListResponse,
   MarketTradesResponse,
+  ResolutionSummaryResponse,
   WalletTradesResponse,
 } from "@/lib/types";
 import { JsonPanel } from "@/components/JsonPanel";
+import {
+  displayMarketTitle,
+  fetchMarketDetails,
+  mergeListWithDetail,
+} from "@/lib/marketEnrich";
 
 const PHASES = ["", "primary", "secondary", "resolved", "cancelled"] as const;
 
 function shortId(id: string | undefined, n = 10): string {
   if (!id) return "—";
   return id.length <= n + 1 ? id : `${id.slice(0, n)}…`;
+}
+
+function AnalysisReport({ report }: { report: ResolutionSummaryResponse }) {
+  const ended = report.phase === "post_resolution";
+  const insights = report.insights ?? [];
+  const sources = report.sources ?? [];
+  const hasIntelligence =
+    insights.length > 0 || Boolean(report.historicalContext) || sources.length > 0;
+
+  return (
+    <div className="analysis">
+      {ended && (
+        <div className="callout">
+          <strong>Resolution summary · {report.status}</strong>
+          {report.outcome && <div>Outcome {report.outcome.toUpperCase()}</div>}
+          {report.resolvedAt && (
+            <div className="muted">Resolved {report.resolvedAt}</div>
+          )}
+          {report.headline && <div>{report.headline}</div>}
+          {report.summary ? (
+            <div>{report.summary}</div>
+          ) : (
+            <div className="muted">No resolution summary stored yet.</div>
+          )}
+        </div>
+      )}
+
+      <div className="callout">
+        <strong>
+          Intelligence
+          {report.phase ? ` · ${report.phase}` : ""} · {report.status}
+        </strong>
+        {insights.length > 0 && (
+          <div>
+            <div className="muted">Insights</div>
+            <ul>
+              {insights.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+        {report.historicalContext && (
+          <div>
+            <div className="muted">Historical context</div>
+            <div>{report.historicalContext}</div>
+          </div>
+        )}
+        {sources.length > 0 && (
+          <div>
+            <div className="muted">Sources</div>
+            <ul>
+              {sources.map((source) => {
+                const label = source.title || source.url || "Source";
+                return (
+                  <li key={`${source.url || ""}-${label}`}>
+                    {source.url ? (
+                      <a href={source.url} target="_blank" rel="noreferrer">
+                        {label}
+                      </a>
+                    ) : (
+                      label
+                    )}
+                    {source.publisher ? ` · ${source.publisher}` : ""}
+                    {source.publicationDate ? ` · ${source.publicationDate}` : ""}
+                    {source.explanation && <div>{source.explanation}</div>}
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        )}
+        {!hasIntelligence && (
+          <div className="muted">
+            No insights, historical context, or sources stored for this phase yet.
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }
 
 function tradeSideLabel(t: CatalogTradeRow): string {
@@ -90,7 +176,7 @@ function TradeRows({
 export function MarketsPanel() {
   const { settings } = useSettings();
   const { publicKey } = useWallet();
-  const { openBuy, openClaim } = useTabNav();
+  const { openBuy, openClaim, openSecondary, openDispute } = useTabNav();
 
   const [categories, setCategories] = useState<string[]>([]);
   const [category, setCategory] = useState("");
@@ -106,6 +192,8 @@ export function MarketsPanel() {
   const [selectedId, setSelectedId] = useState<string>("");
   const [detail, setDetail] = useState<MarketCatalogItem | undefined>();
   const [detailRaw, setDetailRaw] = useState<Json>();
+  const [resolution, setResolution] = useState<ResolutionSummaryResponse | undefined>();
+  const [resolutionRaw, setResolutionRaw] = useState<Json>();
   const [marketTrades, setMarketTrades] = useState<CatalogTradeRow[]>([]);
   const [marketTradesRaw, setMarketTradesRaw] = useState<Json>();
 
@@ -114,7 +202,10 @@ export function MarketsPanel() {
   const [walletTradesRaw, setWalletTradesRaw] = useState<Json>();
 
   const [busy, setBusy] = useState(false);
+  const [enriching, setEnriching] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const enrichGen = useRef(0);
+  const detailsById = useRef<Record<string, MarketCatalogItem>>({});
 
   const requireKey = () => {
     if (!settings.apiKey) throw new Error("Set an API key in the bar above");
@@ -155,13 +246,40 @@ export function MarketsPanel() {
         query,
       });
       const page = data.items || [];
+      if (!append) {
+        enrichGen.current += 1;
+        detailsById.current = {};
+      }
+      const gen = enrichGen.current;
       setItems((prev) => (append ? [...prev, ...page] : page));
       setNextCursor(data.nextCursor || null);
       setListRaw(raw);
+      setBusy(false);
+
+      const ids = page.map((m) => m.marketId).filter(Boolean);
+      if (!ids.length) {
+        setEnriching(false);
+        return;
+      }
+      setEnriching(true);
+      await fetchMarketDetails(settings.apiKey, ids, (chunk) => {
+        if (gen !== enrichGen.current) return false;
+        for (const row of chunk) {
+          detailsById.current[row.marketId] = row;
+        }
+        setItems((prev) =>
+          prev.map((item) => {
+            const extra = detailsById.current[item.marketId];
+            return extra ? mergeListWithDetail(item, extra) : item;
+          }),
+        );
+        return true;
+      });
+      if (gen === enrichGen.current) setEnriching(false);
     } catch (e) {
       setError(describeErr(e));
-    } finally {
       setBusy(false);
+      setEnriching(false);
     }
   };
 
@@ -169,14 +287,24 @@ export function MarketsPanel() {
     setBusy(true);
     setError(null);
     setSelectedId(marketId);
+    const cached = detailsById.current[marketId];
+    if (cached) {
+      setDetail(cached);
+    }
     try {
       requireKey();
       const { data, raw } = await pantaFetch<MarketCatalogItem>(
         `/markets/${encodeURIComponent(marketId)}/`,
         { apiKey: settings.apiKey },
       );
+      detailsById.current[marketId] = data;
       setDetail(data);
       setDetailRaw(raw);
+      setItems((prev) =>
+        prev.map((item) =>
+          item.marketId === marketId ? mergeListWithDetail(item, data) : item,
+        ),
+      );
 
       const trades = await pantaFetch<MarketTradesResponse>(
         `/markets/${encodeURIComponent(marketId)}/trades/`,
@@ -187,6 +315,26 @@ export function MarketsPanel() {
       );
       setMarketTrades(trades.data.items || []);
       setMarketTradesRaw(trades.raw);
+      setResolution(undefined);
+      setResolutionRaw(undefined);
+    } catch (e) {
+      setError(describeErr(e));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const loadResolution = async (marketId: string) => {
+    setBusy(true);
+    setError(null);
+    try {
+      requireKey();
+      const { data, raw } = await pantaFetch<ResolutionSummaryResponse>(
+        `/markets/${encodeURIComponent(marketId)}/resolution-summary/`,
+        { apiKey: settings.apiKey },
+      );
+      setResolution(data);
+      setResolutionRaw(raw);
     } catch (e) {
       setError(describeErr(e));
     } finally {
@@ -249,7 +397,9 @@ export function MarketsPanel() {
           </div>
           <p className="muted">
             <code>GET /markets/</code> · <code>/markets/&#123;id&#125;/</code> ·{" "}
-            <code>/categories/</code>
+            <code>/resolution-summary/</code> · <code>/categories/</code>
+            . The table fills names and volume from detail in the background.
+            Click <strong>Detail</strong> for the full payload.
           </p>
 
           <div className="row">
@@ -334,7 +484,7 @@ export function MarketsPanel() {
                     }
                   >
                     <td>
-                      <div>{m.title || "—"}</div>
+                      <div>{displayMarketTitle(m) || (enriching ? "Loading…" : "—")}</div>
                       <code title={m.marketId}>{shortId(m.marketId, 10)}</code>
                     </td>
                     <td>{m.phase}</td>
@@ -389,9 +539,13 @@ export function MarketsPanel() {
             </div>
           )}
 
+          {enriching && (
+            <p className="muted">Loading names and volume from GET /markets/{"{id}"}/…</p>
+          )}
+
           {detail && (
             <div className="callout">
-              <strong>{detail.title}</strong>
+              <strong>{displayMarketTitle(detail) || "Untitled market"}</strong>
               <div>
                 marketId <code>{detail.marketId}</code>
               </div>
@@ -425,9 +579,24 @@ export function MarketsPanel() {
               {detail.oracle && (
                 <div className="muted">oracle {detail.oracle}</div>
               )}
-              {detail.description && (
-                <div className="muted">{detail.description}</div>
+              {detail.question && detail.question !== detail.title && (
+                <div>
+                  <span className="muted">Question</span>
+                  <div>{detail.question}</div>
+                </div>
               )}
+              {detail.description ? (
+                <div>
+                  <span className="muted">Description</span>
+                  <div>{detail.description}</div>
+                </div>
+              ) : null}
+              {detail.resolutionRule ? (
+                <div>
+                  <span className="muted">Resolution rule</span>
+                  <div>{detail.resolutionRule}</div>
+                </div>
+              ) : null}
               <div className="actions" style={{ marginTop: "0.75rem" }}>
                 {detail.phase === "primary" && (
                   <button
@@ -438,6 +607,30 @@ export function MarketsPanel() {
                     Primary buy
                   </button>
                 )}
+                {detail.phase === "secondary" && (
+                  <button
+                    type="button"
+                    className="btn btn--accent"
+                    onClick={() => openSecondary(detail.marketId)}
+                  >
+                    Secondary
+                  </button>
+                )}
+                <button
+                  type="button"
+                  className="btn"
+                  onClick={() => openDispute(detail.marketId)}
+                >
+                  Dispute
+                </button>
+                <button
+                  type="button"
+                  className="btn"
+                  disabled={busy}
+                  onClick={() => void loadResolution(detail.marketId)}
+                >
+                  Resolution summary
+                </button>
                 {detail.phase === "resolved" && (
                   <button
                     type="button"
@@ -449,6 +642,10 @@ export function MarketsPanel() {
                 )}
               </div>
             </div>
+          )}
+
+          {resolution && detail && resolution.marketId === detail.marketId && (
+            <AnalysisReport report={resolution} />
           )}
 
           {marketTrades.length > 0 && (
@@ -501,6 +698,11 @@ export function MarketsPanel() {
             title="GET /markets/{id}/trades/"
             value={marketTradesRaw}
             empty="Open Detail to load trades"
+          />
+          <JsonPanel
+            title="GET /markets/{id}/resolution-summary/"
+            value={resolutionRaw}
+            empty="Open Detail, then Resolution summary"
           />
           <JsonPanel
             title="GET /wallets/{wallet}/trades/"

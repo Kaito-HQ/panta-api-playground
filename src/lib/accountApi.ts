@@ -1,6 +1,7 @@
 "use client";
 
 import { pantaFetch } from "@/lib/api";
+import { getApiTarget, PANTA_TARGET_HEADER } from "@/lib/target";
 import type {
   Account,
   AccountDashboard,
@@ -66,7 +67,11 @@ export async function fetchAccountMetrics(
 export async function probeIsAdmin(apiKey: string): Promise<boolean> {
   try {
     const res = await fetch("/api/admin-probe", {
-      headers: { Accept: "application/json", "X-Api-Key": apiKey },
+      headers: {
+        Accept: "application/json",
+        "X-Api-Key": apiKey,
+        [PANTA_TARGET_HEADER]: getApiTarget(),
+      },
       cache: "no-store",
     });
     if (!res.ok) return false;

@@ -171,6 +171,7 @@ export type ApiKeyRow = {
 
 export type AdminUser = {
   userId: string;
+  email?: string;
   name: string;
   status: string;
   canCreateMarkets: boolean;
@@ -268,7 +269,9 @@ export type MarketCatalogItem = {
   marketId: string;
   category: string;
   title: string;
+  question?: string;
   description?: string;
+  resolutionRule?: string;
   images?: string[];
   phase: string;
   marketType?: string;
@@ -329,4 +332,84 @@ export type WalletTradesResponse = {
 
 export type CategoriesResponse = {
   categories: string[];
+};
+
+export type SecondaryBuildResponse = {
+  orderId: string;
+  wallet: string;
+  marketId: string;
+  side: string;
+  price: string;
+  shares: string;
+  listingId: string;
+  status: string;
+  instructions: BuiltInstruction[];
+  recentBlockhash: string;
+  lastValidBlockHeight?: number;
+  expiresAt?: string;
+  blockhashExpiryHintSec?: number;
+  intent?: string;
+  maxCostUsdc?: string;
+  proceedsUsdc?: string;
+  feeUsdc?: string;
+  orderAccount?: string;
+};
+
+export type SecondaryListing = {
+  listingId: string;
+  wallet: string;
+  side: string;
+  intent?: string;
+  price: string;
+  shares: string;
+  originalShares?: string;
+  filledShares?: string;
+};
+
+export type SecondaryListingsResponse = {
+  marketId: string;
+  items: SecondaryListing[];
+  nextCursor?: string | null;
+  truncated?: boolean;
+};
+
+export type DisputeBuildResponse = {
+  disputeId?: string;
+  marketId: string;
+  wallet?: string;
+  side?: string;
+  status?: string;
+  instructions?: BuiltInstruction[];
+  derived?: Record<string, string>;
+  recentBlockhash?: string;
+  lastValidBlockHeight?: number;
+  blockhashExpiryHintSec?: number;
+  submittedAt?: string | null;
+  resolvedAt?: string | null;
+  outcome?: string | null;
+};
+
+export type ResolutionSummaryResponse = {
+  marketId: string;
+  status: string;
+  /** created | mid_market | post_resolution */
+  phase?: string | null;
+  outcome?: string | null;
+  resolvedAt?: string | null;
+  headline?: string | null;
+  summary?: string | null;
+  insights?: string[];
+  bullishFactors?: string[];
+  bearishFactors?: string[];
+  historicalContext?: string | null;
+  risks?: string[];
+  sources?: {
+    title?: string;
+    publisher?: string;
+    url?: string;
+    publicationDate?: string;
+    explanation?: string;
+  }[];
+  analysisDisclaimer?: string | null;
+  updatedAt?: string | null;
 };

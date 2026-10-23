@@ -1,8 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-
-const UPSTREAM =
-  process.env.PANTA_API_BASE_URL?.replace(/\/$/, "") ||
-  "http://localhost:8000/api/v1";
+import { PANTA_TARGET_HEADER, upstreamForTarget } from "@/lib/target";
 
 /**
  * Soft admin check for the playground UI.
@@ -15,7 +12,11 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const upstream = await fetch(`${UPSTREAM}/admin/metrics/`, {
+    const upstreamBase = upstreamForTarget(
+      req.headers.get(PANTA_TARGET_HEADER),
+      process.env.PANTA_API_BASE_URL,
+    );
+    const upstream = await fetch(`${upstreamBase}/admin/metrics/`, {
       headers: {
         Accept: "application/json",
         "X-Api-Key": apiKey,
