@@ -1,15 +1,34 @@
-/** Allowlisted API hosts. The browser may only choose one of these names. */
+/** The browser may only choose a name. The URL comes from the env file. */
 
-export const PANTA_TARGETS = {
-  live: "https://live-api.panta.market/api/v1",
-  staging: "https://staging-api.panta.market/api/v1",
-} as const;
-
-export type PantaTarget = keyof typeof PANTA_TARGETS;
+export type PantaTarget = "live" | "staging";
 
 export const PANTA_TARGET_HEADER = "x-panta-target";
 
 export const MAINNET_RPC_URL = "https://api.mainnet-beta.solana.com";
+
+function cleanUrl(value: string | undefined): string {
+  return (value || "").trim().replace(/\/$/, "");
+}
+
+export const PANTA_TARGETS: Record<PantaTarget, string> = {
+  live: cleanUrl(process.env.NEXT_PUBLIC_PANTA_LIVE_API_URL),
+  staging: cleanUrl(process.env.NEXT_PUBLIC_PANTA_STAGING_API_URL),
+};
+
+export function envNameForTarget(target: PantaTarget): string {
+  return target === "staging"
+    ? "NEXT_PUBLIC_PANTA_STAGING_API_URL"
+    : "NEXT_PUBLIC_PANTA_LIVE_API_URL";
+}
+
+export function apiHost(url: string): string {
+  if (!url) return "unset";
+  try {
+    return new URL(url).host;
+  } catch {
+    return url;
+  }
+}
 
 let current: PantaTarget = "live";
 
@@ -23,10 +42,8 @@ export function getApiTarget(): PantaTarget {
 
 export function upstreamForTarget(
   target: string | null | undefined,
-  fallback?: string,
-): string {
+): { target: PantaTarget; url: string } {
   const key = (target || "").trim().toLowerCase();
-  if (key === "live" || key === "staging") return PANTA_TARGETS[key];
-  const env = (fallback || "").replace(/\/$/, "");
-  return env || PANTA_TARGETS.live;
+  const name: PantaTarget = key === "staging" ? "staging" : "live";
+  return { target: name, url: PANTA_TARGETS[name] };
 }

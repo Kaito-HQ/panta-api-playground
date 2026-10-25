@@ -6,7 +6,7 @@ import { useSettings } from "@/components/SettingsContext";
 import { fetchAccount, probeIsAdmin } from "@/lib/accountApi";
 import { ApiError } from "@/lib/api";
 import { defaultRpcUrl } from "@/lib/storage";
-import { MAINNET_RPC_URL, PANTA_TARGETS } from "@/lib/target";
+import { apiHost, MAINNET_RPC_URL, PANTA_TARGETS } from "@/lib/target";
 import { useState } from "react";
 import Image from "next/image";
 
@@ -38,7 +38,9 @@ export function ConnectionBar() {
   const toggleStaging = () => {
     const useStaging = !settings.useStaging;
     let rpcUrl = settings.rpcUrl;
-    if (useStaging && (rpcUrl === defaultRpcUrl || rpcUrl.includes("devnet"))) {
+    const onDevnet =
+      rpcUrl === "https://api.devnet.solana.com" || rpcUrl.includes("devnet");
+    if (useStaging && onDevnet) {
       rpcUrl = MAINNET_RPC_URL;
     }
     if (!useStaging && rpcUrl === MAINNET_RPC_URL) {
@@ -133,9 +135,9 @@ export function ConnectionBar() {
         >
           API{" "}
           <code>
-            {settings.useStaging
-              ? "staging-api.panta.market"
-              : "live-api.panta.market"}
+            {apiHost(
+              settings.useStaging ? PANTA_TARGETS.staging : PANTA_TARGETS.live,
+            )}
           </code>
         </span>
         <span className="conn-bar__chip" title={publicKey?.toBase58()}>

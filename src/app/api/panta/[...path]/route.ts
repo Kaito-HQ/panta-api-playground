@@ -1,13 +1,14 @@
 import http from "node:http";
 import https from "node:https";
 import { NextRequest, NextResponse } from "next/server";
-import { PANTA_TARGET_HEADER, upstreamForTarget } from "@/lib/target";
+import {
+  envNameForTarget,
+  PANTA_TARGET_HEADER,
+  upstreamForTarget,
+} from "@/lib/target";
 
-function upstreamFor(req: NextRequest): string {
-  return upstreamForTarget(
-    req.headers.get(PANTA_TARGET_HEADER),
-    process.env.PANTA_API_BASE_URL,
-  );
+function upstreamFor(req: NextRequest) {
+  return upstreamForTarget(req.headers.get(PANTA_TARGET_HEADER));
 }
 
 /**
@@ -68,7 +69,17 @@ function requestUpstream(
 }
 
 async function forward(req: NextRequest, ctx: Ctx) {
-  const upstreamBase = upstreamFor(req);
+  const selected = upstreamFor(req);
+  const upstreamBase = selected.url;
+  if (!upstreamBase) {
+    return NextResponse.json(
+      {
+        code: "API_URL_UNSET",
+        message: `${envNameForTarget(selected.target)} is empty`,
+      },
+      { status: 500 },
+    );
+  }
   const { path } = await ctx.params;
   const suffix = path.map(encodeURIComponent).join("/");
   const url = new URL(`${upstreamBase}/${suffix}/`);

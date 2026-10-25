@@ -14,7 +14,7 @@ Community contributions are welcome — see [CONTRIBUTING.md](./CONTRIBUTING.md)
 | **Markets** | `GET /markets/` · detail · market trades · resolution summary (`phase`: created, mid_market, post_resolution) · categories · wallet trades |
 | **Create market** | Image upload → quote → build → sign → register (`X-Api-Key`) |
 | **Primary buy** | Quote → build → sign → submit/verify (+ optional trade report) |
-| **Secondary** | List / fill / cancel / book on a graduated USDC market. Fill can be reported with `quoteId` = fill `orderId` |
+| **Secondary** | Sell (`POST /secondary/list/`), bid (`POST /secondary/bid/`), fill, cancel, and book on a graduated USDC market. Fill can be reported with `quoteId` = fill `orderId` |
 | **Positions** | `GET /positions/?wallet=` · jump to Claim when claimable |
 | **Claim** | Win: `POST /claim/build/` → sign → broadcast → report on Trades · Creator fees: `POST /claim/creator-fees/build/` → sign → broadcast (no trade report) |
 | **Dispute** | Build → sign → submit → status during the oracle dispute window |
@@ -36,12 +36,13 @@ Open [http://localhost:3000](http://localhost:3000).
 
 | Variable | Meaning |
 | --- | --- |
-| `PANTA_API_BASE_URL` | Upstream API, default `http://localhost:8000/api/v1` |
+| `NEXT_PUBLIC_PANTA_LIVE_API_URL` | Upstream when Staging is off |
+| `NEXT_PUBLIC_PANTA_STAGING_API_URL` | Upstream when Staging is on |
 | `NEXT_PUBLIC_DEFAULT_RPC` | Default Solana RPC |
 
 Requests go through `/api/panta/*` (Next proxy). The proxy forwards `Authorization`, `X-Api-Key`, and `X-User-Id`.
 
-**Staging on** in the connection bar sends every proxied call to `https://staging-api.panta.market/api/v1`. Off sends them to live. Staging and live keys are not interchangeable. Staging transactions broadcast on mainnet, so set the Solana RPC to a mainnet endpoint (the switch does this when the RPC is still the devnet default).
+**Staging on** sends every proxied call to `NEXT_PUBLIC_PANTA_STAGING_API_URL`. Off sends them to `NEXT_PUBLIC_PANTA_LIVE_API_URL`. Staging and live keys are not interchangeable. Staging transactions broadcast on mainnet, so set the Solana RPC to a mainnet endpoint (the switch does this when the RPC is still the devnet default).
 
 ## First key
 

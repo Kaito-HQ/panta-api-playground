@@ -193,8 +193,8 @@ export function DisputeFlow() {
 
       {!settings.useStaging && (
         <div className="banner banner--warn">
-          Dispute routes are on staging. Turn <strong>Staging on</strong> in the
-          bar, then use a staging API key.
+          Dispute routes are on the staging URL. Turn <strong>Staging on</strong>{" "}
+          in the bar.
         </div>
       )}
       {error && <div className="banner banner--err">{error}</div>}

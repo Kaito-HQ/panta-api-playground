@@ -29,7 +29,7 @@ npm install
 npm run dev
 ```
 
-Point `PANTA_API_BASE_URL` at a reachable Panta API (local or staging). Never commit `.env.local`, API keys, JWTs, or private keys.
+Set `NEXT_PUBLIC_PANTA_LIVE_API_URL` and `NEXT_PUBLIC_PANTA_STAGING_API_URL`. Never commit `.env.local`, API keys, JWTs, or private keys.
 
 ## Pull request process
 

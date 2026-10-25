@@ -318,9 +318,11 @@ export function SecondaryMarketFlow() {
 
           <h2>Secondary market</h2>
           <p className="muted">
-            USDC markets after graduation. A sell rests shares you already hold.
-            A buy rests a bid at your price and locks USDC. You do not need
-            shares to buy. This app signs with the connected wallet and
+            USDC markets after graduation. Sell calls{" "}
+            <code>POST /secondary/list/</code> and needs shares you already
+            hold. Buy calls <code>POST /secondary/bid/</code>, locks USDC, and
+            does not need shares. Fill takes an open order: an ask needs USDC,
+            a bid needs shares. This app signs with the connected wallet and
             broadcasts on the Solana RPC in the bar. Use a mainnet RPC while
             Staging is on.
           </p>
@@ -392,7 +394,7 @@ export function SecondaryMarketFlow() {
               <input
                 value={listingId}
                 onChange={(e) => setListingId(e.target.value)}
-                placeholder="From list or the book"
+                placeholder="Open bid or ask from the book"
               />
             </label>
           )}
@@ -448,7 +450,7 @@ export function SecondaryMarketFlow() {
           <div className="actions">
             {mode === "list" && (
               <button type="button" className="btn" disabled={busy} onClick={runList}>
-                1 · Build list
+                {listIntent === "buy" ? "1 · Build bid" : "1 · Build sell"}
               </button>
             )}
             {mode === "fill" && (
@@ -516,13 +518,15 @@ export function SecondaryMarketFlow() {
                 listingId <code>{build.listingId}</code>
               </div>
               <div>
+                {build.intent ? `${build.intent} · ` : ""}
                 {build.side} · {build.shares} shares @ {build.price}
                 {build.maxCostUsdc ? ` · max cost ${build.maxCostUsdc} USDC` : ""}
+                {build.proceedsUsdc ? ` · proceeds ${build.proceedsUsdc} USDC` : ""}
                 {build.feeUsdc ? ` · fee ${build.feeUsdc}` : ""}
               </div>
               {build.orderAccount && (
                 <div>
-                  remainder bid <code>{build.orderAccount}</code>
+                  order account <code>{build.orderAccount}</code>
                 </div>
               )}
             </div>

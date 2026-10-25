@@ -14,8 +14,10 @@ export async function GET(req: NextRequest) {
   try {
     const upstreamBase = upstreamForTarget(
       req.headers.get(PANTA_TARGET_HEADER),
-      process.env.PANTA_API_BASE_URL,
-    );
+    ).url;
+    if (!upstreamBase) {
+      return NextResponse.json({ isAdmin: false }, { status: 200 });
+    }
     const upstream = await fetch(`${upstreamBase}/admin/metrics/`, {
       headers: {
         Accept: "application/json",

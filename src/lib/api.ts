@@ -1,6 +1,11 @@
 "use client";
 
-import { getApiTarget, PANTA_TARGET_HEADER, PANTA_TARGETS } from "./target";
+import {
+  getApiTarget,
+  PANTA_TARGET_HEADER,
+  PANTA_TARGETS,
+  type PantaTarget,
+} from "./target";
 import type { Json } from "./types";
 
 export class ApiError extends Error {
@@ -29,9 +34,12 @@ export async function pantaFetch<T>(
     userId?: string;
     body?: unknown;
     query?: Record<string, string>;
+    /** Overrides the staging switch for this call. */
+    target?: PantaTarget;
   } = {},
 ): Promise<{ data: T; raw: Json }> {
   const method = options.method || "GET";
+  const target = options.target || getApiTarget();
   const qs = options.query
     ? "?" + new URLSearchParams(options.query).toString()
     : "";
@@ -39,12 +47,12 @@ export async function pantaFetch<T>(
   const upstreamPath = apiPath.endsWith("/") ? apiPath : `${apiPath}/`;
   const url = `/api/panta${apiPath}${qs}`;
   console.log(
-    `[panta] ${method} ${PANTA_TARGETS[getApiTarget()]}${upstreamPath}${qs}`,
+    `[panta] ${method} ${PANTA_TARGETS[target]}${upstreamPath}${qs}`,
   );
 
   const headers: Record<string, string> = {
     Accept: "application/json",
-    [PANTA_TARGET_HEADER]: getApiTarget(),
+    [PANTA_TARGET_HEADER]: target,
   };
   if (options.apiKey) {
     headers["X-Api-Key"] = options.apiKey;

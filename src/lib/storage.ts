@@ -7,7 +7,7 @@ const KEY = "panta-playground";
 export type PlaygroundSettings = {
   apiKey: string;
   rpcUrl: string;
-  /** When true, every proxied call goes to staging-api.panta.market. */
+  /** When true, every proxied call uses NEXT_PUBLIC_PANTA_STAGING_API_URL. */
   useStaging: boolean;
   account: Account | null;
   isAdmin: boolean;
